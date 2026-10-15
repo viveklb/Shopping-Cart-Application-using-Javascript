@@ -45,10 +45,14 @@ Payment failures, cancellation and verification errors retain the cart. The back
 3. Push to `main` or run the Deploy GitHub Pages workflow. It tests the application and publishes only the six pages and browser assets.
 4. Open the deployment URL reported by the workflow.
 
-Relative URLs support GitHub project subpaths. GitHub Pages hosts static files only; host the payment backend separately. No repository or deployment URL was supplied, so remote publishing has not been performed.
+Relative URLs support GitHub project subpaths. GitHub Pages hosts static files only; host the payment backend separately. Repository: https://github.com/viveklb/Shopping-Cart-Application-using-Javascript . Production: https://shopping-cart-application-using-jav.vercel.app .
 
 ## Design and verification
 
 No Figma reference was supplied. The original neutral/olive storefront uses a shared visual system rather than claiming a match to an unavailable template. Product imagery and the catalog need external network access; Google Fonts falls back to Arial if unavailable.
 
 Automated checks cover route guards, expired sessions, HTML escaping, cart isolation, password derivation and page assets. Browser interaction and live payment acceptance require separate verification with a connected browser and merchant test environment.
+
+## Vercel deployment
+
+The GitHub repository is connected to Vercel for automatic deployments. Vercel runs npm run build and serves dist using vercel.json. Manual deployment: vercel deploy --prod. Checkout remains in demo mode until a payment backend is configured.
