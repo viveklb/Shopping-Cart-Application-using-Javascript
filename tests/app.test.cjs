@@ -1,0 +1,12 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const fs=require('node:fs');
+const source=fs.readFileSync('app.js','utf8');
+function app(page,seed={}){const data=new Map(Object.entries(seed).map(([k,v])=>[k,JSON.stringify(v)]));const elements={'#app':{innerHTML:''},'#cart-count':{},'#toast':{classList:{add(){},remove(){}}}};const location={search:'',replace(value){this.redirect=value}};const context=vm.createContext({document:{body:{dataset:{page}},querySelector:s=>elements[s]||null},localStorage:{getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)},location,window:{SHOP_CONFIG:{}},crypto:require('node:crypto').webcrypto,TextEncoder,Intl,Date,setTimeout,clearTimeout,URLSearchParams});vm.runInContext(source,context);return {context,elements,location,run:code=>vm.runInContext(code,context)};}
+test('protected routes redirect guests before rendering personal data',()=>{for(const page of ['shop','cart','profile']){const a=app(page);assert.equal(a.location.redirect,'login.html?next='+page);assert.equal(a.elements['#app'].innerHTML,'');}});
+test('expired sessions are rejected',()=>{const a=app('profile',{'mesh-users':[{id:'a'}],'mesh-session':{userId:'a',expires:1}});assert.equal(a.location.redirect,'login.html?next=profile');});
+test('HTML escapes untrusted user and product content',()=>{const a=app('index');assert.equal(a.run(`escapeHTML('<img onerror="x">')`),'&lt;img onerror=&quot;x&quot;&gt;');});
+test('cart data is isolated per account and quantity is counted',()=>{const a=app('index',{'mesh-users':[{id:'a'}],'mesh-session':{userId:'a',expires:Date.now()+100000},'mesh-cart-a':[{quantity:2},{quantity:3}],'mesh-cart-b':[{quantity:99}]});assert.equal(a.run('countCart()'),5);});
+test('password hashes are salted and deterministic for verification',async()=>{const a=app('index');const first=await a.run(`hashPassword('password123','salt-a')`);assert.equal(first,await a.run(`hashPassword('password123','salt-a')`));assert.notEqual(first,await a.run(`hashPassword('password123','salt-b')`));assert.equal(first.length,64);});
+test('all six pages load shared styles and scripts',()=>{for(const page of ['index','login','signup','shop','cart','profile']){const html=fs.readFileSync(page+'.html','utf8');assert.ok(html.includes('styles.css'));assert.ok(html.includes('app.js'));assert.ok(html.includes('name="viewport"'));}});
